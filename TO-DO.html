@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced To-Do Web App</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background: linear-gradient(135deg, #1f3c88, #5d8bf4);
+    color: #333;
+  }
+  #todo-app {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    padding: 25px;
+    width: 350px;
+    animation: fadeIn 1s ease-in-out;
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #1f3c88;
+  }
+  #date {
+    text-align: center;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 15px;
+  }
+  #todo-input {
+    width: 94%;
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 1px solid #696666;
+    border-radius: 6px;
+  }
+  #add-button {
+    padding: 10px;
+    background-color: #1f3c88;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: 600;
+  }
+  #add-button:hover {
+    background-color: #16306a;
+  }
+  #todo-list {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 15px;
+  }
+  .todo-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+    transition: background 0.3s;
+  }
+  .todo-item:hover {
+    background: #f9f9f9;
+  }
+  .completed {
+    text-decoration: line-through;
+    color: #777;
+  }
+  .buttons {
+    display: flex;
+    gap: 5px;
+  }
+  .btn {
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .complete-button { background-color: #4CAF50; color: white; }
+  .edit-button { background-color: #ff9800; color: white; }
+  .remove-button { background-color: #f44336; color: white; }
+  .complete-button:hover { background-color: #388e3c; }
+  .edit-button:hover { background-color: #e68900; }
+  .remove-button:hover { background-color: #d32f2f; }
+  #footer-controls {
+    text-align: center;
+    margin-top: 15px;
+  }
+  #clear-button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #5d8bf4;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #clear-button:hover {
+    background: #1f3c88;
+  }
+  @keyframes fadeIn {
+    from {opacity: 0; transform: translateY(20px);}
+    to {opacity: 1; transform: translateY(0);}
+  }
+</style>
+</head>
+<body>
+<div id="todo-app">
+  <h2>To-Do List</h2>
+  <p id="date"></p>
+  <input type="text" id="todo-input" placeholder="Add a new task...">
+  <button id="add-button" onclick="addTodo()">Add Task</button>
+  <ul id="todo-list"></ul>
+  <div id="footer-controls">
+    <p id="task-count">0 tasks</p>
+    <button id="clear-button" onclick="clearAll()">Clear All</button>
+  </div>
+</div>
+
+<script>
+  // Display current date
+  document.getElementById("date").innerText = new Date().toDateString();
+
+  // Load tasks from localStorage
+  document.addEventListener("DOMContentLoaded", loadTodos);
+
+  function addTodo() {
+    const input = document.getElementById('todo-input');
+    const todoText = input.value.trim();
+    if (todoText === '') return;
+
+    createTodoElement(todoText);
+    saveTodoToLocalStorage(todoText);
+
+    input.value = '';
+    updateTaskCount();
+  }
+
+  function createTodoElement(text, completed = false) {
+    const todoList = document.getElementById('todo-list');
+    const todoItem = document.createElement('li');
+    todoItem.className = 'todo-item';
+
+    const span = document.createElement('span');
+    span.textContent = text;
+    if (completed) span.classList.add("completed");
+
+    const buttons = document.createElement('div');
+    buttons.className = 'buttons';
+    buttons.innerHTML = `
+      <button class="btn complete-button" onclick="toggleComplete(this)">✓</button>
+      <button class="btn edit-button" onclick="editTask(this)">✎</button>
+      <button class="btn remove-button" onclick="removeTodo(this)">✖</button>
+    `;
+
+    todoItem.appendChild(span);
+    todoItem.appendChild(buttons);
+    todoList.appendChild(todoItem);
+  }
+
+  function toggleComplete(button) {
+    const task = button.parentElement.previousSibling;
+    task.classList.toggle("completed");
+    saveAllTodos();
+  }
+
+  function editTask(button) {
+    const task = button.parentElement.previousSibling;
+    const newTask = prompt("Edit your task:", task.textContent);
+    if (newTask) {
+      task.textContent = newTask;
+      saveAllTodos();
+    }
+  }
+
+  function removeTodo(button) {
+    const todoItem = button.parentElement.parentElement;
+    todoItem.remove();
+    saveAllTodos();
+    updateTaskCount();
+  }
+
+  function clearAll() {
+    document.getElementById('todo-list').innerHTML = '';
+    localStorage.removeItem("todos");
+    updateTaskCount();
+  }
+
+  function updateTaskCount() {
+    const count = document.querySelectorAll("#todo-list li").length;
+    document.getElementById("task-count").innerText = count + (count === 1 ? " task" : " tasks");
+  }
+
+  // Local Storage Handling
+  function saveTodoToLocalStorage(text) {
+    let todos = JSON.parse(localStorage.getItem("todos")) || [];
+    todos.push({ text, completed: false });
+    localStorage.setItem("todos", JSON.stringify(todos));
+    updateTaskCount();
+  }
+
+  function saveAllTodos() {
+    let todos = [];
+    document.querySelectorAll("#todo-list li").forEach(item => {
+      const task = item.querySelector("span");
+      todos.push({ text: task.textContent, completed: task.classList.contains("completed") });
+    });
+    localStorage.setItem("todos", JSON.stringify(todos));
+  }
+
+  function loadTodos() {
+    let todos = JSON.parse(localStorage.getItem("todos")) || [];
+    todos.forEach(todo => createTodoElement(todo.text, todo.completed));
+    updateTaskCount();
+  }
+</script>
+</body>
+</html>
